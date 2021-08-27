@@ -41,6 +41,6 @@ size_t wrkq_nq(struct wrkq_t *q, struct wrkq_item *item);
 
 void wrkq_dq(struct wrkq_t *q, struct wrkq_result *out);
 
-void wrkq_join(struct wrkq_t *q);
+void wrkq_join(struct wrkq_t *q, struct wrkq_result **results);
 
 #endif /* WRKQ_H */

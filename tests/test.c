@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <wrkq.h>
+#include <unistd.h>
+#include <stdatomic.h>
+
+atomic_int global = 0;
 
 void *hello(void *ptr) {
 #define UNUSED(A) (void)(A)
@@ -26,6 +30,7 @@ int main(void) {
         wrkq_nq(q, &items[i]);
     }
 
+    sleep(1);
     wrkq_destroy(q);
     free(items);
     return 0;

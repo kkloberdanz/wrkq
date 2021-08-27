@@ -13,6 +13,7 @@ struct wrkq_t {
     size_t queue_producer_index;
     size_t result_index;
     size_t id;
+    size_t jobs_finished;
     pthread_mutex_t mtx;
     sem_t empty_count;
     sem_t fill_count;
@@ -30,6 +31,10 @@ static void *wrkq_thread_loop(void *args) {
         pull_job(q, &work_item);
         result = work_item.func(work_item.arg);
         push_result(q, result);
+
+        pthread_mutex_lock(&q->mtx);
+        q->jobs_finished++;
+        pthread_mutex_unlock(&q->mtx);
     }
     return NULL;
 }
@@ -80,6 +85,7 @@ struct wrkq_t *wrkq_new(struct wrkq_options *opt) {
     q->n_workers = opt->n_workers;
     q->queue_depth = opt->queue_depth;
     q->id = 0;
+    q->jobs_finished = 0;
 
     queue = malloc(sizeof(*queue) * opt->queue_depth);
     if (!queue) {
@@ -188,4 +194,47 @@ static void push_result(struct wrkq_t *q, struct wrkq_result *result) {
     UNUSED(q);
     UNUSED(result);
 #undef UNUSED
+    /* TODO: put result to the results queue */
+}
+
+void wkrq_dq(struct wrkq_t *q, struct wrkq_result *result) {
+    /* TODO: wait on results queue for a result to come in, then return
+     * the first possible result to the result pointer
+     */
+#define UNUSED(A) (void)(A)
+    UNUSED(q);
+    UNUSED(result);
+#undef UNUSED
+    if (result) {
+
+    } else {
+
+    }
+}
+
+void wrkq_join(struct wrkq_t *q, struct wrkq_result **results) {
+    size_t difference;
+    size_t i = 0;
+
+    pthread_mutex_lock(&q->mtx);
+    difference = q->jobs_finished - q->id;
+    pthread_mutex_unlock(&q->mtx);
+
+    if (results) {
+        *results = malloc(sizeof(struct wrkq_result) * difference);
+    }
+
+    if (!*results) {
+        perror(
+            "wrkq: unable to allocate memory for results, joining without data"
+        );
+    }
+
+    for (i = 0; i < difference; i++) {
+        if (*results) {
+            wkrq_dq(q, &*results[i]);
+        } else {
+            wkrq_dq(q, NULL);
+        }
+    }
 }
