@@ -9,7 +9,8 @@ struct wrkq_t {
     pthread_t *threads;
     size_t n_workers;
     size_t queue_depth;
-    size_t queue_index;
+    size_t queue_consumer_index;
+    size_t queue_producer_index;
     size_t result_index;
     size_t id;
     pthread_mutex_t mtx;
@@ -38,17 +39,19 @@ static int init_locks(struct wrkq_t *q) {
 
     err = pthread_mutex_init(&q->mtx, NULL);
     if (err) {
-        perror("failed to initialize mutex");
+        perror("wrkq: failed to initialize mutex");
         goto error;
     }
 
     err = sem_init(&q->empty_count, 0, q->queue_depth);
     if (err) {
+        perror("wrkq: failed to initialize semaphore");
         goto destroy_empty_count;
     }
 
     err = sem_init(&q->fill_count, 0, 0);
     if (err) {
+        perror("wrkq: failed to initialize semaphore");
         goto destroy_fill_count;
     }
 
@@ -81,7 +84,8 @@ struct wrkq_t *wrkq_new(struct wrkq_options *opt) {
         goto fail;
     }
     q->queue = queue;
-    q->queue_index = 0;
+    q->queue_consumer_index = 0;
+    q->queue_producer_index = 0;
 
     threads = calloc(opt->n_workers, sizeof(*threads));
     if (!threads) {
@@ -95,7 +99,7 @@ struct wrkq_t *wrkq_new(struct wrkq_options *opt) {
             &threads[n_started],
             NULL,
             wrkq_thread_loop,
-            NULL
+            q
         );
         if (status) {
             perror("wrkq: failed to create thread");
@@ -119,10 +123,10 @@ fail:
 
 void wrkq_destroy(struct wrkq_t *q) {
     size_t i;
-    free(q->queue);
     for (i = 0; i < q->n_workers; i++) {
         pthread_cancel(q->threads[i]);
     }
+    free(q->queue);
     free(q->threads);
     free(q);
 }
@@ -135,15 +139,15 @@ void wrkq_destroy(struct wrkq_t *q) {
  * https://en.wikipedia.org/wiki/Producer%E2%80%93consumer_problem#Using_semaphores
  */
 static size_t job_enqueue(struct wrkq_t *q, struct wrkq_item *item) {
-    q->queue[q->queue_index] = *item;
-    q->queue_index = (q->queue_index + 1) % q->queue_depth;
+    q->queue[q->queue_producer_index] = *item;
+    q->queue_producer_index = (q->queue_producer_index + 1) % q->queue_depth;
     q->id++;
     return q->id;
 }
 
 static void job_dequeue(struct wrkq_t *q, struct wrkq_item *out) {
-    *out = q->queue[q->queue_index];
-    q->queue_index = (q->queue_index + 1) % q->queue_depth;
+    *out = q->queue[q->queue_consumer_index];
+    q->queue_consumer_index = (q->queue_consumer_index + 1) % q->queue_depth;
 }
 
 size_t wrkq_nq(struct wrkq_t *q, struct wrkq_item *item) {

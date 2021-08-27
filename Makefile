@@ -1,6 +1,6 @@
 CC=cc
 CFLAGS=-Werror -Wall -Wextra -std=c89 $(OPT) -fPIC -I./include
-LDFLAGS=-lpthread
+LDFLAGS=-L. -pthread -l:libwrkq.a
 SRC=$(wildcard src/*.c)
 INC=$(wildcard include/*.h)
 OBJ=$(patsubst src/%.c,%.o,$(SRC))
@@ -12,6 +12,17 @@ release: OPT:=-Os
 .PHONY: debug
 debug: libwrkq.so libwrkq.a
 debug: OPT:=-O0 -ggdb3
+
+.PHONY: sanitize
+sanitize: libwrkq.so libwrkq.a
+sanitize: OPT:=-O0 -ggdb3 \
+	-fsanitize=address \
+	-fsanitize=leak \
+	-fsanitize=undefined
+sanitize: test
+
+test: debug
+	$(CC) -o test tests/test.c $(CFLAGS) $(LDFLAGS)
 
 libwrkq.so: $(OBJ)
 	$(CC) -shared -o libwrkq.so $(CFLAGS) $(OBJ)
@@ -28,3 +39,4 @@ clean:
 	rm -f libwrkq.so
 	rm -f libwrkq.a
 	rm -f core
+	rm -f test
