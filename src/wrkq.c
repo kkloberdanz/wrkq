@@ -126,6 +126,9 @@ void wrkq_destroy(struct wrkq_t *q) {
     for (i = 0; i < q->n_workers; i++) {
         pthread_cancel(q->threads[i]);
     }
+    sem_destroy(&q->empty_count);
+    sem_destroy(&q->fill_count);
+    pthread_mutex_destroy(&q->mtx);
     free(q->queue);
     free(q->threads);
     free(q);
