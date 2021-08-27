@@ -15,20 +15,10 @@ struct wrkq_t {
     pthread_mutex_t mtx;
     sem_t empty_count;
     sem_t fill_count;
-
 };
 
 static void pull_job(struct wrkq_t *q, struct wrkq_item *out);
 static void push_result(struct wrkq_t *q, struct wrkq_result *result);
-
-int foo(void) {
-    puts("called foo");
-    return 42;
-}
-
-/*
- * TODO: create ring buffer
- */
 
 static void *wrkq_thread_loop(void *args) {
     struct wrkq_t *q = args;
