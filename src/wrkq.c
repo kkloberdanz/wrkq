@@ -55,6 +55,8 @@ static int init_locks(struct wrkq_t *q) {
         goto destroy_fill_count;
     }
 
+    return 0;
+
 destroy_fill_count:
     sem_destroy(&q->fill_count);
 destroy_empty_count:
@@ -93,7 +95,9 @@ struct wrkq_t *wrkq_new(struct wrkq_options *opt) {
     }
     q->threads = threads;
 
-    init_locks(q);
+    if (init_locks(q)) {
+        goto fail;
+    }
     for (n_started = 0; n_started < opt->n_workers; n_started++) {
         int status = pthread_create(
             &threads[n_started],
