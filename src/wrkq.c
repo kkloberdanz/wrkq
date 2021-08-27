@@ -25,12 +25,15 @@ static void push_result(struct wrkq_t *q, struct wrkq_result *result);
 static void *wrkq_thread_loop(void *args) {
     struct wrkq_t *q = args;
     struct wrkq_item work_item;
-    void *result = NULL;
+    struct wrkq_result result;
+    void *return_data = NULL;
 
     for (;;) {
         pull_job(q, &work_item);
-        result = work_item.func(work_item.arg);
-        push_result(q, result);
+        return_data = work_item.func(work_item.arg);
+        result.value = return_data;
+        result.id = work_item.id;
+        push_result(q, &result);
 
         pthread_mutex_lock(&q->mtx);
         q->jobs_finished++;
@@ -155,6 +158,7 @@ static size_t job_enqueue(struct wrkq_t *q, struct wrkq_item *item) {
     q->queue[q->queue_producer_index] = *item;
     q->queue_producer_index = (q->queue_producer_index + 1) % q->queue_depth;
     q->id++;
+    q->queue[q->queue_producer_index].id = q->id;
     return q->id;
 }
 

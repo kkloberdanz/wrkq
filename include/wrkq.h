@@ -16,6 +16,8 @@ struct wrkq_item {
 
     /* input argument to func */
     void *arg;
+
+    size_t id;
 };
 
 struct wrkq_result {
