@@ -226,12 +226,11 @@ void wrkq_join(struct wrkq_t *q, struct wrkq_result **results) {
 
     if (results) {
         *results = malloc(sizeof(struct wrkq_result) * difference);
-    }
-
-    if (!*results) {
-        perror(
-            "wrkq: unable to allocate memory for results, joining without data"
-        );
+        if (!*results) {
+            perror(
+                "wrkq: unable to allocate memory for results, joining without data"
+            );
+        }
     }
 
     for (i = 0; i < difference; i++) {
