@@ -219,6 +219,8 @@ void wkrq_dq(struct wrkq_t *q, struct wrkq_result *result) {
 void wrkq_join(struct wrkq_t *q, struct wrkq_result **results) {
     size_t difference;
     size_t i = 0;
+    const char *msg = \
+        "wrkq: unable to allocate memory for results, joining without data"
 
     pthread_mutex_lock(&q->mtx);
     difference = q->jobs_finished - q->id;
@@ -227,9 +229,7 @@ void wrkq_join(struct wrkq_t *q, struct wrkq_result **results) {
     if (results) {
         *results = malloc(sizeof(struct wrkq_result) * difference);
         if (!*results) {
-            perror(
-                "wrkq: unable to allocate memory for results, joining without data"
-            );
+            perror(msg);
         }
     }
 
