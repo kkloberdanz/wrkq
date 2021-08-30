@@ -7,7 +7,7 @@
 
 int foo(void);
 
-struct wrkq_item {
+struct wrkq_job {
     /* 
      * this function gets invoked with the argument 'arg' once it gets pulled
      * from the work queue
@@ -29,7 +29,7 @@ struct wrkq_options {
     /* number of worker threads */
     size_t n_workers;
 
-    /* maximum number of items in the work queue */
+    /* maximum number of jobs in the work queue */
     size_t queue_depth;
 };
 
@@ -39,7 +39,7 @@ struct wrkq_t *wrkq_new(struct wrkq_options *opt);
 
 void wrkq_destroy(struct wrkq_t *q);
 
-size_t wrkq_nq(struct wrkq_t *q, struct wrkq_item *item);
+size_t wrkq_nq(struct wrkq_t *q, struct wrkq_job *job);
 
 void wrkq_dq(struct wrkq_t *q, struct wrkq_result *out);
 

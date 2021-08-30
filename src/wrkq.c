@@ -4,7 +4,7 @@
 #include <wrkq.h>
 
 struct wrkq_t {
-    struct wrkq_item *queue;
+    struct wrkq_job *queue;
     struct wrkq_result *results;
     pthread_t *threads;
     size_t n_workers;
@@ -19,20 +19,20 @@ struct wrkq_t {
     sem_t fill_count;
 };
 
-static void pull_job(struct wrkq_t *q, struct wrkq_item *out);
+static void pull_job(struct wrkq_t *q, struct wrkq_job *out);
 static void push_result(struct wrkq_t *q, struct wrkq_result *result);
 
 static void *wrkq_thread_loop(void *args) {
     struct wrkq_t *q = args;
-    struct wrkq_item work_item;
+    struct wrkq_job work_job;
     struct wrkq_result result;
     void *return_data = NULL;
 
     for (;;) {
-        pull_job(q, &work_item);
-        return_data = work_item.func(work_item.arg);
+        pull_job(q, &work_job);
+        return_data = work_job.func(work_job.arg);
         result.value = return_data;
-        result.id = work_item.id;
+        result.id = work_job.id;
         push_result(q, &result);
 
         pthread_mutex_lock(&q->mtx);
@@ -75,7 +75,7 @@ error:
 }
 
 struct wrkq_t *wrkq_new(struct wrkq_options *opt) {
-    struct wrkq_item *queue = NULL;
+    struct wrkq_job *queue = NULL;
     struct wrkq_t *q = NULL;
     pthread_t *threads = NULL;
     size_t n_started = 0;
@@ -154,25 +154,25 @@ void wrkq_destroy(struct wrkq_t *q) {
  * that is known to work (see multi producer/consumer example)
  * https://en.wikipedia.org/wiki/Producer%E2%80%93consumer_problem#Using_semaphores
  */
-static size_t job_enqueue(struct wrkq_t *q, struct wrkq_item *item) {
-    q->queue[q->queue_producer_index] = *item;
+static size_t job_enqueue(struct wrkq_t *q, struct wrkq_job *job) {
+    q->queue[q->queue_producer_index] = *job;
     q->queue_producer_index = (q->queue_producer_index + 1) % q->queue_depth;
     q->id++;
     q->queue[q->queue_producer_index].id = q->id;
     return q->id;
 }
 
-static void job_dequeue(struct wrkq_t *q, struct wrkq_item *out) {
+static void job_dequeue(struct wrkq_t *q, struct wrkq_job *out) {
     *out = q->queue[q->queue_consumer_index];
     q->queue_consumer_index = (q->queue_consumer_index + 1) % q->queue_depth;
 }
 
-size_t wrkq_nq(struct wrkq_t *q, struct wrkq_item *item) {
+size_t wrkq_nq(struct wrkq_t *q, struct wrkq_job *job) {
     size_t id = 0;
 
     sem_wait(&q->empty_count);
     pthread_mutex_lock(&q->mtx);
-    id = job_enqueue(q, item);
+    id = job_enqueue(q, job);
     pthread_mutex_unlock(&q->mtx);
     sem_post(&q->fill_count);
     return id;
@@ -185,7 +185,7 @@ void wrkq_dq(struct wrkq_t *q, struct wrkq_result *out) {
 #undef UNUSED
 }
 
-static void pull_job(struct wrkq_t *q, struct wrkq_item *out) {
+static void pull_job(struct wrkq_t *q, struct wrkq_job *out) {
     sem_wait(&q->fill_count);
     pthread_mutex_lock(&q->mtx);
     job_dequeue(q, out);
