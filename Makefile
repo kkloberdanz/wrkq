@@ -21,7 +21,8 @@ sanitize: OPT:=-O0 -ggdb3 \
 	-fsanitize=undefined
 sanitize: test
 
-test: debug
+test: OPT:=-O0 -ggdb3
+test: libwrkq.so libwrkq.a
 	$(CC) -o test tests/test.c $(CFLAGS) $(LDFLAGS)
 
 libwrkq.so: $(OBJ)
