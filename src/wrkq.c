@@ -234,7 +234,7 @@ void wrkq_join(struct wrkq_t *q, struct wrkq_result **results) {
     }
 
     for (i = 0; i < difference; i++) {
-        if (*results) {
+        if (results && *results) {
             wkrq_dq(q, &*results[i]);
         } else {
             wkrq_dq(q, NULL);
