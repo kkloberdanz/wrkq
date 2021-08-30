@@ -178,13 +178,6 @@ size_t wrkq_nq(struct wrkq_t *q, struct wrkq_job *job) {
     return id;
 }
 
-void wrkq_dq(struct wrkq_t *q, struct wrkq_result *out) {
-#define UNUSED(A) (void)(A)
-    UNUSED(q);
-    UNUSED(out);
-#undef UNUSED
-}
-
 static void pull_job(struct wrkq_t *q, struct wrkq_job *out) {
     sem_wait(&q->fill_count);
     pthread_mutex_lock(&q->mtx);
@@ -201,7 +194,7 @@ static void push_result(struct wrkq_t *q, struct wrkq_result *result) {
     /* TODO: put result to the results queue */
 }
 
-void wkrq_dq(struct wrkq_t *q, struct wrkq_result *result) {
+void wrkq_dq(struct wrkq_t *q, struct wrkq_result *result) {
     /* TODO: wait on results queue for a result to come in, then return
      * the first possible result to the result pointer
      */
@@ -220,7 +213,7 @@ void wrkq_join(struct wrkq_t *q, struct wrkq_result **results) {
     size_t difference;
     size_t i = 0;
     const char *msg = \
-        "wrkq: unable to allocate memory for results, joining without data"
+        "wrkq: unable to allocate memory for results, joining without data";
 
     pthread_mutex_lock(&q->mtx);
     difference = q->jobs_finished - q->id;
@@ -235,9 +228,9 @@ void wrkq_join(struct wrkq_t *q, struct wrkq_result **results) {
 
     for (i = 0; i < difference; i++) {
         if (results && *results) {
-            wkrq_dq(q, &*results[i]);
+            wrkq_dq(q, &*results[i]);
         } else {
-            wkrq_dq(q, NULL);
+            wrkq_dq(q, NULL);
         }
     }
 }
