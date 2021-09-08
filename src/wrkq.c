@@ -167,12 +167,12 @@ static void job_dequeue(struct wrkq_t *q, struct wrkq_job *out) {
     q->queue_consumer_index = (q->queue_consumer_index + 1) % q->queue_depth;
 }
 
-size_t wrkq_nq(struct wrkq_t *q, struct wrkq_job *job) {
+size_t wrkq_nq(struct wrkq_t *q, struct wrkq_job job) {
     size_t id = 0;
 
     sem_wait(&q->empty_count);
     pthread_mutex_lock(&q->mtx);
-    id = job_enqueue(q, job);
+    id = job_enqueue(q, &job);
     pthread_mutex_unlock(&q->mtx);
     sem_post(&q->fill_count);
     return id;

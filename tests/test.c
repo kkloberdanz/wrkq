@@ -18,20 +18,19 @@ int main(void) {
     struct wrkq_options opt;
     struct wrkq_t *q = NULL;
     size_t i;
-    struct wrkq_job *jobs = malloc(1000 * sizeof(*jobs));
 
     opt.n_workers = 16;
     opt.queue_depth = 255;
     q = wrkq_new(&opt);
 
     for (i = 0; i < 1000; i++) {
-        jobs[i].func = hello;
-        jobs[i].arg = NULL;
-        wrkq_nq(q, &jobs[i]);
+        struct wrkq_job job;
+        job.func = hello;
+        job.arg = NULL;
+        wrkq_nq(q, job);
     }
 
     sleep(1);
     wrkq_destroy(q);
-    free(jobs);
     return 0;
 }

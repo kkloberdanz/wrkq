@@ -39,7 +39,7 @@ struct wrkq_t *wrkq_new(struct wrkq_options *opt);
 
 void wrkq_destroy(struct wrkq_t *q);
 
-size_t wrkq_nq(struct wrkq_t *q, struct wrkq_job *job);
+size_t wrkq_nq(struct wrkq_t *q, struct wrkq_job job);
 
 void wrkq_dq(struct wrkq_t *q, struct wrkq_result *out);
 
